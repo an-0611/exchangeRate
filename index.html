@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="shortcut icon" href="/favicon.ico"><meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name="theme-color" content="#000000"><link rel="manifest" href="/manifest.json"><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/3.3.7+1/css/sb-admin-2.min.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"><title></title></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div><div id="content"><h3>現在時間：<span id="date"></span><span id="HMS"></span></h3><h3>即時匯率</h3><div><div><span>持有幣別</span> <select id="Currency"></select> <span style="margin-left:15px">共</span> <input id="HowMuch" placeholder="請輸入金額"> <span>元</span> <span style="margin-left:15px">想要換算成</span> <select id="Currency_1"></select></div><span style="margin-left:15px;margin-top:15px;display:inline-block">匯率為&nbsp;&nbsp;</span> <span id="calc"></span></div><h3>換算結果</h3><div>結果將<span style="text-decoration:underline">四捨五入</span>，共可換<span id="result">0</span>元 <span id="errorText" style="margin-left:20px;display:none">金額錯誤，請重新輸入</span></div></div><script type="application/javascript" src="Currency.json"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script><script type="text/javascript">var Currency = document.getElementById('Currency');
+      var Currency_1 = document.getElementById('Currency_1');
+      var calcText = document.getElementById('calc');
+      var HowMuch = document.getElementById('HowMuch');
+      var result = document.getElementById('result');
+
+      //date計時器
+      var fillNumber = "";
+      var fillNumber_1 = "";
+      var fillNumber_2 = "";
+      let RunTime = () => {
+        let d = new Date()
+        d.getHours() < 10 ? fillNumber = "0" : fillNumber = ""
+        d.getMinutes() < 10 ? fillNumber_1 = "0" : fillNumber_1 = ""
+        d.getSeconds() < 10 ? fillNumber_2 = "0" : fillNumber_2 = ""
+        document.getElementById('HMS').textContent = " " + fillNumber + d.getHours() + ":" + fillNumber_1 + d.getMinutes() + ":" + fillNumber_2 + d.getSeconds();
+        setTimeout( RunTime, 1000 )
+      }
+      RunTime();
+
+      // get fixer.io api
+      var url = "http://data.fixer.io/api/latest?access_key=2f52a74feddf92fc4cf9cffa36086bc5"
+        function makeRequest(callback) {
+          xhr = new XMLHttpRequest();
+          xhr.onload = function() {
+          var response = JSON.parse(this.responseText);
+          callback(response)
+          // let data = Object.assign({},json)
+          // console.log(data)
+        };
+        xhr.open( "GET", url,true );
+        xhr.send();
+      }
+      //有拉回資料才觸發acallback
+      function acallback(json) {
+        document.getElementById('date').textContent = json.date + " ";
+        // 添加中文幣別名稱名稱至json
+        json.ChineseName = obj.ChineseName;
+
+        for( var coins in json.rates ) {
+          document.getElementById('Currency').options.add(new Option( coins + " - " + json.ChineseName[coins] ));
+          document.getElementById('Currency_1').options.add(new Option( coins + " - " + json.ChineseName[coins] ));
+        }
+
+        //selected
+        document.getElementById('Currency').options[145].selected = 'selected';
+        document.getElementById('Currency_1').options[149].selected = 'selected';
+
+        var calc = () => {
+          var str = Currency.options[Currency.selectedIndex].text;
+          var str_1 = Currency_1.options[Currency_1.selectedIndex].text;
+          var val = json.rates[str.substr(0,3)];
+          var val_1 = json.rates[str_1.substr(0,3)];
+          var finalCalc = (val_1/val).toFixed(4);
+          calcText.textContent = " 1  ： " + finalCalc ;
+          //如果input有值->取得input的值計算->輸出到result
+          if( HowMuch.value ) {
+            result.textContent =  (HowMuch.value * finalCalc).toFixed(0)
+            if(result.textContent == "NaN") {
+              document.getElementById('errorText').style.display = "";
+            }
+          }
+        }
+
+        Currency.onchange = () => {
+          return calc();
+        }
+        Currency_1.onchange = () => {
+          return calc();
+        }
+        HowMuch.onfocus = () => {
+          HowMuch.placeholder = "";
+        }
+        HowMuch.onblur = () => {
+          if(!HowMuch.value || result.textContent != "NaN") {
+            document.getElementById('errorText').style.display = "none";
+            HowMuch.placeholder = "請輸入金額";
+          }
+        }
+        HowMuch.onkeyup = () => {
+          if( HowMuch.value ){
+            calc();
+            document.getElementById('errorText').style.display = "none";
+            if(result.textContent == "NaN" ) {
+              document.getElementById('errorText').style.display = "";
+            }
+          }else{
+            document.getElementById('errorText').style.display = "none";
+            result.textContent = "0";
+          }
+        }
+
+        //keyup 作一次正規防止輸入@#$%^&*
+        //onblur 作一次正規
+
+        //init calc & HowMuchVal
+        var initStateCalc = () => { calc() }
+        initStateCalc();//init calc
+      }//acallback end
+      makeRequest(acallback);</script><script type="text/javascript" src="/static/js/main.086697ad.js"></script></body></html>
